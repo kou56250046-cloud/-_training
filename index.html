@@ -2,256 +2,364 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>瞬読トレーニング（文字数モード追加版）</title>
+<title>瞬読トレーニング 完全版 v3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  body {
-    font-family: sans-serif;
-    background: #f6f8fa;
-    color: #111;
-    margin: 0 auto;
-    max-width: 900px;
-    padding: 1rem;
-    transition: background 0.3s, color 0.3s;
-  }
-  body.dark { background: #1e1e1e; color: #eee; }
-  h1, h2 { text-align: center; }
-  button {
-    padding: 0.5rem 1rem;
-    background: #1976d2;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 0.25rem;
-  }
-  button:hover { opacity: 0.85; }
-  select, input[type="number"], input[type="file"] {
-    padding: 0.4rem;
-    margin-top: 0.3rem;
-    font-size: 1rem;
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  #flashText, #wordFlash {
-    text-align: center;
-    font-size: 1.5rem;
-    margin-top: 1rem;
-    white-space: pre-line;
-    min-height: 100px;
-  }
-  #timer, #timerWord {
-    text-align: center;
-    font-size: 1.1rem;
-    margin-top: 0.5rem;
-  }
-  #history { margin-top: 1.5rem; border-top: 2px solid #1976d2; padding: 10px; }
-  #stats { text-align: center; margin: 10px 0; }
-  canvas { width: 100% !important; max-height: 300px; }
-  .dark-toggle {
-    float: right;
-    background: none;
-    border: 1px solid #1976d2;
-    color: #1976d2;
-  }
-  .dark-toggle:hover { background: #1976d2; color: #fff; }
+:root {
+  --bg-light:#f6f8fa;
+  --text-light:#111;
+  --bg-dark:#1e1e1e;
+  --text-dark:#eee;
+  --accent:#1976d2;
+  --accent2:#ef5350;
+  --accent3:#43a047;
+  --accent4:#ffb300;
+}
+body {
+  font-family:sans-serif;
+  background:var(--bg-light);
+  color:var(--text-light);
+  max-width:900px;
+  margin:0 auto;
+  padding:1rem;
+  transition:background .3s,color .3s;
+}
+body.dark {
+  background:var(--bg-dark);
+  color:var(--text-dark);
+}
+h1,h2{text-align:center;}
+button{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  border-radius:5px;
+  padding:0.5rem 1rem;
+  cursor:pointer;
+  margin:0.25rem;
+}
+button:hover{opacity:.85;}
+select,input[type=number],input[type=file]{
+  padding:.4rem;
+  margin-top:.3rem;
+  font-size:1rem;
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+}
+#flashText,#wordFlash,#circleArea,#randomArea{
+  text-align:center;
+  font-size:1.6rem;
+  margin-top:1rem;
+  min-height:120px;
+  white-space:pre-line;
+  position:relative;
+}
+#circleArea,#randomArea{
+  border:1px dashed #ccc;
+  height:300px;
+  border-radius:8px;
+  overflow:hidden;
+}
+#timer,#timerWord,#timerCircle,#timerRandom{
+  text-align:center;
+  font-size:1.1rem;
+}
+#history{border-top:2px solid var(--accent);margin-top:2rem;padding-top:1rem;}
+canvas{width:100%!important;max-height:320px;}
+.dark-toggle{
+  float:right;
+  background:none;
+  border:1px solid var(--accent);
+  color:var(--accent);
+}
+.dark-toggle:hover{background:var(--accent);color:#fff;}
 </style>
 </head>
 <body>
 <h1>📚 瞬読トレーニング</h1>
 <button class="dark-toggle" id="toggleTheme">🌙 ダークモード</button>
 
-<!-- フラッシュトレーニング -->
+<!-- 🧠 フラッシュ -->
 <section>
-  <h2>🧠 フラッシュトレーニング</h2>
-  <label>文章ファイルを選択（.txt）</label>
-  <input type="file" id="textFile" accept=".txt">
-  <label>表示モード</label>
-  <select id="displayMode">
-    <option value="10">10文字</option>
-    <option value="15">15文字</option>
-    <option value="20">20文字</option>
-    <option value="1">1行</option>
-    <option value="2">2行</option>
-    <option value="3">3行</option>
-    <option value="6">段落</option>
-  </select>
-  <label>表示速度（秒）</label>
-  <input type="number" id="flashSpeed" value="1" min="0.2" max="5" step="0.1">
-  <label>トレーニング時間（分）</label>
-  <input type="number" id="flashTime" value="2" min="1" max="10">
-  <button id="startFlash">開始</button>
-  <button id="stopFlash">中止</button>
-  <div id="flashText"></div>
-  <div id="timer"></div>
-</section>
+<h2>🧠 フラッシュトレーニング</h2>
+<input type="file" id="textFile" accept=".txt">
+<select id="displayMode">
+<option value="10">10文字</option>
+<option value="15">15文字</option>
+<option value="20">20文字</option>
+<option value="1">1行</option>
+<option value="2">2行</option>
+<option value="3">3行</option>
+<option value="6">段落</option>
+</select>
+<label>表示速度(秒)</label><input type="number" id="flashSpeed" value="1" min="0.1" max="3" step="0.1">
+<label>時間(分)</label><input type="number" id="flashTime" value="2">
+<button id="startFlash">開始</button><button id="stopFlash">停止</button>
+<div id="flashText"></div><div id="timer"></div>
+</section><hr>
 
-<hr>
-
-<!-- 単語トレーニング -->
+<!-- 🪄 単語 -->
 <section>
-  <h2>🪄 単語トレーニング</h2>
-  <label>単語ファイルを選択（.txt）</label>
-  <input type="file" id="wordFile" accept=".txt">
-  <label>表示速度（秒）</label>
-  <input type="number" id="wordSpeed" value="0.5" min="0.1" max="2" step="0.1">
-  <label>トレーニング時間（分）</label>
-  <input type="number" id="wordTime" value="3" min="1" max="10">
-  <button id="startWord">開始</button>
-  <button id="stopWord">中止</button>
-  <div id="wordFlash"></div>
-  <div id="timerWord"></div>
-</section>
+<h2>🪄 単語トレーニング</h2>
+<input type="file" id="wordFile" accept=".txt">
+<label>速度(秒)</label><input type="number" id="wordSpeed" value="0.5" min="0.1" max="3" step="0.1">
+<label>時間(分)</label><input type="number" id="wordTime" value="3">
+<button id="startWord">開始</button><button id="stopWord">停止</button>
+<div id="wordFlash"></div><div id="timerWord"></div>
+</section><hr>
 
-<hr>
+<!-- 🌀 円形 -->
+<section>
+<h2>🌀 円形トレーニング</h2>
+<input type="file" id="circleFile" accept=".txt">
+<label>速度(秒)</label><input type="number" id="circleSpeed" value="1" min="0.1" max="3" step="0.1">
+<label>時間(分)</label><input type="number" id="circleTime" value="2">
+<button id="startCircle">開始</button><button id="stopCircle">停止</button>
+<div id="circleArea"></div><div id="timerCircle"></div>
+</section><hr>
 
-<!-- 履歴・統計・グラフ -->
+<!-- 🎲 ランダム -->
+<section>
+<h2>🎲 ランダム配置トレーニング</h2>
+<input type="file" id="randomFile" accept=".txt">
+<label>速度(秒)</label><input type="number" id="randomSpeed" value="1" min="0.1" max="3" step="0.1">
+<label>時間(分)</label><input type="number" id="randomTime" value="2">
+<button id="startRandom">開始</button><button id="stopRandom">停止</button>
+<div id="randomArea"></div><div id="timerRandom"></div>
+</section><hr>
+
+<!-- 📈 履歴と統計 -->
 <section id="history">
-  <h2>📈 履歴と統計</h2>
-  <div id="stats">全期間合計: 0分｜今月: 0分｜今週: 0分</div>
-  <div style="text-align:center;">
-    <button id="exportCSV">📂 履歴CSV出力</button>
-    <button id="resetHistory">🧹 履歴リセット</button>
-    <button id="toggleChart">📊 月次⇄日次切替</button>
-  </div>
-  <div id="streak" style="text-align:center;margin:10px;">連続日数: 0日</div>
-  <canvas id="chart"></canvas>
-  <ul id="historyList"></ul>
+<h2>📈 履歴と統計</h2>
+<div style="text-align:center;">
+<button id="togglePeriod">⏱ 日別</button>
+<button id="toggleMode">🧭 フラッシュ</button>
+<button id="exportCSV">📂 CSV出力</button>
+<button id="resetHistory">🧹 リセット</button>
+</div>
+<div id="stats" style="text-align:center;margin:10px;"></div>
+<canvas id="chart"></canvas>
+<ul id="historyList"></ul>
 </section>
 
 <script>
-let flashTimer, flashCountdown, wordTimer, wordCountdown, chart;
-let textContent = "", wordList = [];
-let monthlyMode = false;
+let flashTimer,flashCountdown,wordTimer,wordCountdown,circleTimer,circleCountdown,randomTimer,randomCountdown,chart;
+let textContent="",wordList=[],circleLines=[],randomLines=[];
+let chartPeriod="day"; // day, week, month
+let chartMode="フラッシュ";
 
-// === ファイル読み込み ===
-document.getElementById('textFile').addEventListener('change', e=>{
-  const reader=new FileReader();
-  reader.onload=evt=>textContent=evt.target.result;
-  reader.readAsText(e.target.files[0]);
-});
-document.getElementById('wordFile').addEventListener('change', e=>{
-  const reader=new FileReader();
-  reader.onload=evt=>wordList=evt.target.result.split(/\r?\n/).filter(w=>w.trim());
-  reader.readAsText(e.target.files[0]);
-});
+const chartEl=document.getElementById("chart");
+const stats=document.getElementById("stats");
 
-// === フラッシュ ===
-document.getElementById('startFlash').addEventListener('click', ()=>{
-  if(!textContent)return alert("文章ファイルを選択してください");
-  let total=Number(flashTime.value)*60, speed=Number(flashSpeed.value)*1000;
-  const lines=textContent.split(/\r?\n/).filter(l=>l.trim());
-  let i=0, charIndex=0;
-  timer.textContent=formatTime(total);
-  flashCountdown=setInterval(()=>{total--;timer.textContent=formatTime(total);
-    if(total<=0)stopFlash("フラッシュ",speed);},1000);
+function formatTime(sec){const m=Math.floor(sec/60).toString().padStart(2,"0");const s=(sec%60).toString().padStart(2,"0");return`${m}:${s}`;}
+function shuffle(s){return s.split("").sort(()=>Math.random()-.5).join("");}
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 
-  flashTimer=setInterval(()=>{
-    const mode = Number(displayMode.value);
-    let output = "";
+/* ファイル読み込み */
+function readFile(input,callback){
+ const f=input.files[0];if(!f)return;
+ const r=new FileReader();r.onload=e=>callback(e.target.result);r.readAsText(f);
+}
+document.getElementById("textFile").onchange=e=>readFile(e.target,t=>textContent=t);
+document.getElementById("wordFile").onchange=e=>readFile(e.target,t=>wordList=t.split(/\r?\n/).filter(l=>l.trim()));
+document.getElementById("circleFile").onchange=e=>readFile(e.target,t=>circleLines=t.split(/\r?\n/).filter(l=>l.trim()));
+document.getElementById("randomFile").onchange=e=>readFile(e.target,t=>randomLines=t.split(/\r?\n/).filter(l=>l.trim()));
 
-    if ([10,15,20].includes(mode)) {
-      // 🔹 テキスト全体から順に表示（文字数モード）
-      const text = textContent.replace(/\r?\n/g, "");
-      output = text.slice(charIndex, charIndex + mode);
-      charIndex += mode;
-      if (charIndex >= text.length) charIndex = 0; // ループ
-    } else {
-      // 🔹 行単位表示
-      if(i>=lines.length)i=0;
-      output = lines.slice(i, i + mode).join("\n");
-      i += mode;
-    }
-    flashText.textContent = output;
-  }, speed);
-});
-
-document.getElementById('stopFlash').addEventListener('click',()=>stopFlash("フラッシュ",flashSpeed.value));
-function stopFlash(type,speed){
-  clearInterval(flashTimer);clearInterval(flashCountdown);
-  timer.textContent="停止中";flashText.textContent="";
-  addHistory(type,flashTime.value,speed);
+/* === フラッシュ === */
+document.getElementById("startFlash").onclick=()=>{
+ if(!textContent)return alert("文章ファイルを選択してください");
+ startFlash();
+};
+document.getElementById("stopFlash").onclick=()=>stopFlash("フラッシュ",flashTime.value,flashSpeed.value);
+function startFlash(){
+ clearInterval(flashTimer);clearInterval(flashCountdown);
+ let total=Number(flashTime.value)*60,speed=Number(flashSpeed.value)*1000;
+ const lines=textContent.split(/\r?\n/).filter(l=>l.trim());
+ const mode=Number(displayMode.value);let i=0,char=0;const flat=textContent.replace(/\r?\n/g,"");
+ flashCountdown=setInterval(()=>{total--;timer.textContent=formatTime(total);if(total<=0)stopFlash("フラッシュ",flashTime.value,flashSpeed.value)},1000);
+ flashTimer=setInterval(()=>{
+  let out="";
+  if([10,15,20].includes(mode)){out=flat.slice(char,char+mode);char+=mode;if(char>=flat.length)char=0;}
+  else{if(i>=lines.length)i=0;out=lines.slice(i,i+mode).join("\n");i+=mode;}
+  flashText.textContent=out;
+ },speed);
+}
+function stopFlash(type,dur,spd){
+ clearInterval(flashTimer);clearInterval(flashCountdown);
+ flashText.textContent="";timer.textContent="停止中";addHistory(type,dur,spd);
 }
 
-// === 単語 ===
-document.getElementById('startWord').addEventListener('click', ()=>{
-  if(wordList.length==0)return alert("単語ファイルを選択してください");
-  let total=Number(wordTime.value)*60, speed=Number(wordSpeed.value)*1000;
-  timerWord.textContent=formatTime(total);
-  wordCountdown=setInterval(()=>{total--;timerWord.textContent=formatTime(total);
-    if(total<=0)stopWord("単語",speed);},1000);
-  wordTimer=setInterval(()=>{
-    const line=wordList[Math.floor(Math.random()*wordList.length)];
-    const shuffled=shuffle(line);
-    wordFlash.textContent=shuffled;
-    setTimeout(()=>wordFlash.textContent="",speed*0.8);
-  },speed);
-});
-document.getElementById('stopWord').addEventListener('click',()=>stopWord("単語",wordSpeed.value));
-function stopWord(type,speed){
-  clearInterval(wordTimer);clearInterval(wordCountdown);
-  timerWord.textContent="停止中";wordFlash.textContent="";
-  addHistory(type,wordTime.value,speed);
+/* === 単語 === */
+document.getElementById("startWord").onclick=()=>{
+ if(wordList.length==0)return alert("単語ファイルを選択してください");
+ startWord();
+};
+document.getElementById("stopWord").onclick=()=>stopWord("単語",wordTime.value,wordSpeed.value);
+function startWord(){
+ clearInterval(wordTimer);clearInterval(wordCountdown);
+ let total=Number(wordTime.value)*60,speed=Number(wordSpeed.value)*1000;
+ wordCountdown=setInterval(()=>{total--;timerWord.textContent=formatTime(total);if(total<=0)stopWord("単語",wordTime.value,wordSpeed.value)},1000);
+ wordTimer=setInterval(()=>{
+  const w=wordList[Math.floor(Math.random()*wordList.length)];
+  wordFlash.textContent=shuffle(w);
+  setTimeout(()=>wordFlash.textContent="",speed*0.8);
+ },speed);
+}
+function stopWord(type,dur,spd){
+ clearInterval(wordTimer);clearInterval(wordCountdown);
+ wordFlash.textContent="";timerWord.textContent="停止中";addHistory(type,dur,spd);
 }
 
-// === 履歴・グラフ ===（前回同様）
-function addHistory(type,duration,speed){
-  const r={date:new Date().toLocaleString(),type,duration:Number(duration),speed:Number(speed)};
-  const hist=JSON.parse(localStorage.getItem("trainingHistory")||"[]");
-  hist.push(r);
-  localStorage.setItem("trainingHistory",JSON.stringify(hist));
-  renderHistory();
+/* === 円形 === */
+document.getElementById("startCircle").onclick=()=>{
+ if(circleLines.length==0)return alert("ファイルを選択");
+ startCircle();
+};
+document.getElementById("stopCircle").onclick=()=>stopCircle("円形",circleTime.value,circleSpeed.value);
+function startCircle(){
+ clearInterval(circleTimer);clearInterval(circleCountdown);
+ let total=Number(circleTime.value)*60,speed=Number(circleSpeed.value)*1000;
+ circleCountdown=setInterval(()=>{total--;timerCircle.textContent=formatTime(total);if(total<=0)stopCircle("円形",circleTime.value,circleSpeed.value)},1000);
+ circleTimer=setInterval(drawCircle,speed);drawCircle();
 }
+function drawCircle(){
+ const area=circleArea;area.innerHTML="";
+ const line=circleLines[Math.floor(Math.random()*circleLines.length)];if(!line)return;
+ const chars=line.split(""),w=area.clientWidth,h=area.clientHeight,cx=w/2,cy=h/2,r=Math.min(w,h)*0.35;
+ chars.forEach((c,i)=>{
+  const a=2*Math.PI*i/chars.length;
+  const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
+  const div=document.createElement("div");
+  div.textContent=c;div.style.position="absolute";
+  div.style.left=x+"px";div.style.top=y+"px";
+  div.style.transform="translate(-50%,-50%)";
+  div.style.fontSize="1.6rem";div.style.fontFamily="sans-serif";
+  area.appendChild(div);
+ });
+}
+function stopCircle(type,dur,spd){
+ clearInterval(circleTimer);clearInterval(circleCountdown);
+ circleArea.innerHTML="";timerCircle.textContent="停止中";addHistory(type,dur,spd);
+}
+
+/* === ランダム === */
+document.getElementById("startRandom").onclick=()=>{
+ if(randomLines.length==0)return alert("ファイルを選択");
+ startRandom();
+};
+document.getElementById("stopRandom").onclick=()=>stopRandom("ランダム",randomTime.value,randomSpeed.value);
+function startRandom(){
+ clearInterval(randomTimer);clearInterval(randomCountdown);
+ let total=Number(randomTime.value)*60,speed=Number(randomSpeed.value)*1000;
+ randomCountdown=setInterval(()=>{total--;timerRandom.textContent=formatTime(total);if(total<=0)stopRandom("ランダム",randomTime.value,randomSpeed.value)},1000);
+ randomTimer=setInterval(drawRandom,speed);drawRandom();
+}
+function drawRandom(){
+ const area=randomArea;area.innerHTML="";
+ const line=randomLines[Math.floor(Math.random()*randomLines.length)];if(!line)return;
+ const chars=line.split(""),w=area.clientWidth,h=area.clientHeight;
+ chars.forEach(c=>{
+  const div=document.createElement("div");div.textContent=c;
+  div.style.position="absolute";
+  div.style.left=rand(20,w-20)+"px";div.style.top=rand(20,h-20)+"px";
+  div.style.transform="translate(-50%,-50%)";
+  div.style.fontSize="1.5rem";div.style.fontFamily="sans-serif"; // ✅統一フォント
+  area.appendChild(div);
+ });
+}
+function stopRandom(type,dur,spd){
+ clearInterval(randomTimer);clearInterval(randomCountdown);
+ randomArea.innerHTML="";timerRandom.textContent="停止中";addHistory(type,dur,spd);
+}
+
+/* === 履歴 === */
+function getHistory(){return JSON.parse(localStorage.getItem("trainingHistory")||"[]");}
+function saveHistory(d){localStorage.setItem("trainingHistory",JSON.stringify(d));}
+function addHistory(type,dur,spd){
+ const r={date:new Date().toLocaleString(),type,duration:+dur,speed:+spd};
+ const hist=getHistory();hist.push(r);saveHistory(hist);renderHistory();
+}
+function resetHistory(){
+ if(confirm("履歴を全削除しますか？")){localStorage.removeItem("trainingHistory");renderHistory();}
+}
+document.getElementById("resetHistory").onclick=resetHistory;
+document.getElementById("exportCSV").onclick=()=>{
+ const h=getHistory();if(h.length==0)return alert("履歴なし");
+ const csv="日付,種類,分,秒\n"+h.map(x=>`${x.date},${x.type},${x.duration},${x.speed}`).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+ a.download="training_history.csv";a.click();
+};
+
+/* === グラフ === */
+document.getElementById("togglePeriod").onclick=()=>{
+ chartPeriod=chartPeriod=="day"?"week":chartPeriod=="week"?"month":"day";
+ renderHistory();
+};
+document.getElementById("toggleMode").onclick=()=>{
+ const arr=["フラッシュ","単語","円形","ランダム"];
+ chartMode=arr[(arr.indexOf(chartMode)+1)%arr.length];
+ renderHistory();
+};
+
 function renderHistory(){
-  const hist=JSON.parse(localStorage.getItem("trainingHistory")||"[]");
-  historyList.innerHTML=hist.slice(-10).map(h=>`<li>${h.date} - ${h.type} (${h.duration}分, ${h.speed}秒)</li>`).join("");
-  const dates=[...new Set(hist.map(h=>h.date.split(" ")[0]))];
-  streak.textContent=`連続日数: ${calcStreak(dates)}日`;
-  drawChart(hist); updateStats(hist);
+ const hist=getHistory();
+ const list=document.getElementById("historyList");
+ list.innerHTML=hist.slice(-10).map(x=>`<li>${x.date} - ${x.type} (${x.duration}分)</li>`).join("");
+ drawChart(hist);
+ updateStats(hist);
 }
-document.getElementById('exportCSV').addEventListener('click',()=>{
-  const hist=JSON.parse(localStorage.getItem("trainingHistory")||"[]");
-  if(hist.length==0)return alert("履歴がありません");
-  const csv="日付,トレーニング種類,時間(分),速度(秒)\n"+hist.map(h=>`${h.date},${h.type},${h.duration},${h.speed}`).join("\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-  a.download="training_history.csv";a.click();
-});
-document.getElementById('resetHistory').addEventListener('click',()=>{
-  if(confirm("履歴をすべて削除しますか？")){localStorage.removeItem("trainingHistory");renderHistory();}
-});
-function updateStats(hist){
-  const total=hist.reduce((a,b)=>a+b.duration,0);
-  const now=new Date();
-  const month=now.getMonth(), weekStart=new Date(now);weekStart.setDate(now.getDate()-now.getDay());
-  const monthSum=hist.filter(h=>new Date(h.date).getMonth()==month).reduce((a,b)=>a+b.duration,0);
-  const weekSum=hist.filter(h=>new Date(h.date)>=weekStart).reduce((a,b)=>a+b.duration,0);
-  stats.textContent=`全期間合計: ${total}分｜今月: ${monthSum}分｜今週: ${weekSum}分`;
-}
-function drawChart(hist){
-  const dataMap={};
-  hist.forEach(h=>{
-    const d=new Date(h.date);
-    const key=monthlyMode?`${d.getFullYear()}-${d.getMonth()+1}`:h.date.split(" ")[0];
-    dataMap[key]=(dataMap[key]||0)+h.duration;
-  });
-  const labels=Object.keys(dataMap), data=Object.values(dataMap);
-  if(chart)chart.destroy();
-  chart=new Chart(chartEl.getContext("2d"),{
-    type:'line',
-    data:{labels,datasets:[{label:monthlyMode?'月別合計(分)':'日別合計(分)',data,borderColor:'#1976d2',fill:false,tension:0.2}]},
-    options:{scales:{y:{beginAtZero:true}}}
-  });
-}
-document.getElementById('toggleChart').addEventListener('click',()=>{monthlyMode=!monthlyMode;renderHistory();});
 
-// === 共通関数 ===
-function shuffle(str){return str.split(/(?<=.)/).sort(()=>Math.random()-0.5).join('');}
-function formatTime(sec){const m=Math.floor(sec/60).toString().padStart(2,'0');const s=(sec%60).toString().padStart(2,'0');return `${m}:${s}`;}
-function calcStreak(dates){dates.sort((a,b)=>new Date(a)-new Date(b));let s=0,l=null;for(const d of dates){const cur=new Date(d);if(!l)s=1;else{const diff=(cur-l)/(1000*60*60*24);if(diff==1)s++;else if(diff>1)s=1;}l=cur;}return s;}
-document.getElementById('toggleTheme').addEventListener('click',()=>document.body.classList.toggle('dark'));
+function updateStats(hist){
+ const modes=["フラッシュ","単語","円形","ランダム"];
+ const totals={day:0,week:0,month:0};
+ const now=new Date();
+ const startOfWeek=new Date(now);startOfWeek.setDate(now.getDate()-now.getDay());
+ const startOfMonth=new Date(now.getFullYear(),now.getMonth(),1);
+ const grouped={};
+ hist.forEach(h=>{
+  const d=new Date(h.date);
+  if(!grouped[h.type])grouped[h.type]={day:0,week:0,month:0};
+  if(d.toDateString()==now.toDateString())grouped[h.type].day+=h.duration;
+  if(d>=startOfWeek)grouped[h.type].week+=h.duration;
+  if(d>=startOfMonth)grouped[h.type].month+=h.duration;
+ });
+ let html="";
+ modes.forEach(m=>{
+  const g=grouped[m]||{day:0,week:0,month:0};
+  html+=`${m}: 日${g.day}分｜週${g.week}分｜月${g.month}分<br>`;
+ });
+ stats.innerHTML=html;
+}
+
+function drawChart(hist){
+ const keyFn=(d)=>{
+  const date=new Date(d.date);
+  if(chartPeriod=="day")return d.date.split(" ")[0];
+  if(chartPeriod=="week"){
+    const week=Math.ceil(date.getDate()/7);
+    return `${date.getFullYear()}-${date.getMonth()+1}-第${week}週`;
+  }
+  return `${date.getFullYear()}-${date.getMonth()+1}月`;
+ };
+ const map={};
+ hist.filter(x=>x.type==chartMode).forEach(x=>{
+  const k=keyFn(x);
+  map[k]=(map[k]||0)+x.duration;
+ });
+ const labels=Object.keys(map);
+ const data=Object.values(map);
+ if(chart)chart.destroy();
+ chart=new Chart(chartEl.getContext("2d"),{
+  type:"bar",
+  data:{labels,datasets:[{label:`${chartMode} (${chartPeriod})`,data,backgroundColor:"rgba(25,118,210,0.5)"}]},
+  options:{scales:{y:{beginAtZero:true}}}
+ });
+}
+
+/* === 共通 === */
+document.getElementById("toggleTheme").onclick=()=>document.body.classList.toggle("dark");
 renderHistory();
 </script>
 </body>
