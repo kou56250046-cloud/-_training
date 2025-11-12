@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>瞬読トレーニング 完全版 v3 + 右脳沈黙モード</title>
+<title>瞬読トレーニング 完全版 v5（右脳沈黙＋フォント調整）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -11,6 +11,7 @@
   --bg-dark:#1e1e1e;  --text-dark:#eee;
   --accent:#1976d2;   --accent2:#ef5350;
   --accent3:#43a047;  --accent4:#ffb300;
+  --fs-mult:1; /* フォント倍率（スライダーで変更） */
 }
 body{
   font-family:sans-serif;background:var(--bg-light);color:var(--text-light);
@@ -26,52 +27,91 @@ button:hover{opacity:.85;}
 select,input[type=number],input[type=file]{
   padding:.4rem;margin-top:.3rem;font-size:1rem;display:block;width:100%;box-sizing:border-box;
 }
-#flashText,#wordFlash,#circleArea,#randomArea{
-  text-align:center;font-size:1.6rem;margin-top:1rem;min-height:120px;white-space:pre-line;position:relative;
+#flashText,#wordFlash{
+  text-align:center;font-size:calc(1.8rem * var(--fs-mult));
+  margin-top:1rem;min-height:120px;white-space:pre-line;position:relative;
 }
 #circleArea,#randomArea{
+  text-align:center;margin-top:1rem;min-height:120px;white-space:pre-line;position:relative;
   border:1px dashed #ccc;height:300px;border-radius:8px;overflow:hidden;
+  font-size:0; /* 子要素 .letter 側でサイズ指定 */
 }
-#timer,#timerWord,#timerCircle,#timerRandom{ text-align:center;font-size:1.1rem; }
+#timer,#timerWord,#timerCircle,#timerRandom{
+  text-align:center;font-size:1.1rem;
+}
 #history{border-top:2px solid var(--accent);margin-top:2rem;padding-top:1rem;}
 canvas{width:100%!important;max-height:320px;}
 .dark-toggle{float:right;background:none;border:1px solid var(--accent);color:var(--accent);}
 .dark-toggle:hover{background:var(--accent);color:#fff;}
 
-/* 🖤 右脳沈黙オーバーレイ */
+/* 円形／ランダムの一文字 */
+.letter{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  font-family:sans-serif;
+  font-size:calc(1.6rem * var(--fs-mult));
+}
+
+/* 右脳沈黙オーバーレイ */
 #silenceOverlay{
   position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;
   z-index:9999;color:#fff;text-align:center;padding:24px;
 }
 .silence-box{
-  max-width:640px;
+  max-width:none;   
+  width:80%;        
 }
-.silence-title{font-size:1.2rem;margin-bottom:.5rem;opacity:.9;}
-.silence-hint{font-size:.95rem;opacity:.8;}
-.progress-wrap{margin-top:16px;height:6px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden}
+.progress-wrap {
+  margin: 16px auto 0;
+  height: 8px; /* 少し太くしてもOK */
+  width: 70%;  /* ← 追加：バーを長くする。80〜90%が自然 */
+  max-width: 720px; /* PC用の最大幅 */
+  background: rgba(255,255,255,0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
 .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#8ec5ff,#fff);transition:width .1s linear;}
 .small{font-size:.85rem;opacity:.75;margin-top:6px;}
+
+/* 共通レイアウト */
 .settings-row{
   display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.5rem 0;
 }
 @media (max-width:720px){ .settings-row{grid-template-columns:1fr;} }
 .label-inline{display:flex;align-items:center;gap:.5rem;}
+.small-note{font-size:.9rem;opacity:.75;margin-top:.25rem;}
 </style>
 </head>
 <body>
 <h1>📚 瞬読トレーニング</h1>
 <button class="dark-toggle" id="toggleTheme">🌙 ダークモード</button>
 
-<!-- 🧩 グローバル設定：右脳沈黙モード -->
+<!-- 🔤 フォント倍率 -->
+<section>
+  <h2>🔤 表示サイズ</h2>
+  <label>フォント倍率（0.8〜2.5）
+    <input type="range" id="fontScale" min="0.8" max="2.5" step="0.05" value="1">
+  </label>
+  <div class="small-note">
+    大きくすると文字の「形の印象」が強まり、黙読が起こりにくくなります。
+  </div>
+</section>
+<hr>
+
+<!-- 🧠 右脳沈黙モード設定 -->
 <section>
   <h2>🧠 右脳沈黙モード（非言語・残像統合）</h2>
   <div class="settings-row">
-    <label class="label-inline"><input type="checkbox" id="silenceMode"> 有効にする</label>
+    <label class="label-inline">
+      <input type="checkbox" id="silenceMode"> 有効にする
+    </label>
     <label>沈黙秒数（推奨3〜5秒）
       <input type="number" id="silenceSec" value="3" min="1" max="10" step="1">
     </label>
   </div>
-  <p class="small">※ 刺激の直後に黒画面へ切替え、「言語化せずに色・余韻だけ」を感じる時間を入れます。</p>
+  <p class="small-note">
+    刺激のあとに黒画面へ切り替え、「言語化せずに形・配置・流れの印象だけ」を味わう時間をつくります。
+  </p>
 </section>
 <hr>
 
@@ -86,8 +126,8 @@ canvas{width:100%!important;max-height:320px;}
   <option value="1">1行</option>
   <option value="2">2行</option>
   <option value="3">3行</option>
-  <option value="4">4行</option>  
-  <option value="5">5行</option>  
+  <option value="4">4行</option>
+  <option value="5">5行</option>
   <option value="6">段落</option>
 </select>
 <label>表示速度(秒)</label><input type="number" id="flashSpeed" value="1" min="0.1" max="3" step="0.1">
@@ -140,12 +180,12 @@ canvas{width:100%!important;max-height:320px;}
 <ul id="historyList"></ul>
 </section>
 
-<!-- 🖤 右脳沈黙オーバーレイ -->
+<!-- 右脳沈黙オーバーレイ（文字はカウントのみ） -->
 <div id="silenceOverlay" aria-hidden="true">
   <div class="silence-box">
-    <div class="silence-title">目を閉じて、色と余韻だけを感じてください</div>
-    <div class="silence-hint">言語化せず、形・配置・流れの「印象」だけを味わいます</div>
-    <div class="progress-wrap"><div class="progress-bar" id="silenceBar"></div></div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="silenceBar"></div>
+    </div>
     <div class="small" id="silenceCount"></div>
   </div>
 </div>
@@ -155,22 +195,36 @@ let flashTimer,flashCountdown,wordTimer,wordCountdown,circleTimer,circleCountdow
 let textContent="",wordList=[],circleLines=[],randomLines=[];
 let chartPeriod="day"; // day, week, month
 let chartMode="フラッシュ";
+
 const chartEl=document.getElementById("chart");
 const stats=document.getElementById("stats");
 
 /* 共通ユーティリティ */
-function formatTime(sec){const m=String(Math.floor(sec/60)).padStart(2,"0");const s=String(sec%60).padStart(2,"0");return `${m}:${s}`;}
+function formatTime(sec){
+  const m=String(Math.floor(sec/60)).padStart(2,"0");
+  const s=String(sec%60).padStart(2,"0");
+  return `${m}:${s}`;
+}
 function shuffle(s){return s.split("").sort(()=>Math.random()-.5).join("");}
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 
+/* フォント倍率 */
+const fontScaleEl=document.getElementById("fontScale");
+fontScaleEl.addEventListener("input",()=>{
+  document.documentElement.style.setProperty("--fs-mult", fontScaleEl.value);
+});
+
 /* ファイル読み込み */
-function readFile(input,cb){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsText(f);}
+function readFile(input,cb){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsText(f);
+}
 document.getElementById("textFile").onchange=e=>readFile(e.target,t=>textContent=t);
 document.getElementById("wordFile").onchange=e=>readFile(e.target,t=>wordList=t.split(/\r?\n/).filter(l=>l.trim()));
 document.getElementById("circleFile").onchange=e=>readFile(e.target,t=>circleLines=t.split(/\r?\n/).filter(l=>l.trim()));
 document.getElementById("randomFile").onchange=e=>readFile(e.target,t=>randomLines=t.split(/\r?\n/).filter(l=>l.trim()));
 
-/* 🖤 右脳沈黙モード */
+/* 右脳沈黙モード */
 const silenceOverlay=document.getElementById("silenceOverlay");
 const silenceBar=document.getElementById("silenceBar");
 const silenceCount=document.getElementById("silenceCount");
@@ -181,7 +235,7 @@ let silenceLock=false; // 黒画面中は次刺激を出さない
 function beginSilence(){
   if(!silenceModeEl.checked || silenceLock) return Promise.resolve();
   silenceLock=true;
-  const total= Math.max(1, Math.min(10, Number(silenceSecEl.value)||3));
+  const total=Math.max(1,Math.min(10,Number(silenceSecEl.value)||3));
   let remain=total;
   silenceOverlay.style.display="flex";
   silenceBar.style.width="0%";
@@ -190,11 +244,16 @@ function beginSilence(){
   return new Promise(res=>{
     function step(now){
       const t=(now-start)/1000;
-      const prog=Math.min(1, t/total);
+      const prog=Math.min(1,t/total);
       silenceBar.style.width=(prog*100).toFixed(1)+"%";
-      const left=Math.ceil(total - t);
-      if(left!==remain){remain=left;silenceCount.textContent=`${Math.max(0,remain)} 秒`;}
-      if(prog<1){requestAnimationFrame(step);}else{
+      const left=Math.ceil(total-t);
+      if(left!==remain){
+        remain=left;
+        silenceCount.textContent=`${Math.max(0,remain)} 秒`;
+      }
+      if(prog<1){
+        requestAnimationFrame(step);
+      }else{
         silenceOverlay.style.display="none";
         silenceLock=false;
         res();
@@ -218,33 +277,39 @@ document.getElementById("startFlash").onclick=()=>{
 document.getElementById("stopFlash").onclick=()=>stopFlash("フラッシュ",flashTime.value,flashSpeed.value);
 
 function startFlash(){
-  clearInterval(flashTimer); clearInterval(flashCountdown);
+  clearInterval(flashTimer);clearInterval(flashCountdown);
   let total=Number(flashTime.value)*60, speed=Number(flashSpeed.value)*1000;
   const lines=textContent.split(/\r?\n/).filter(l=>l.trim());
-  const mode=Number(displayMode.value); let i=0,char=0; const flat=textContent.replace(/\r?\n/g,"");
+  const mode=Number(displayMode.value);
+  let i=0,char=0;
+  const flat=textContent.replace(/\r?\n/g,"");
 
-  flashCountdown=setInterval(()=>{ total--; timer.textContent=formatTime(total); if(total<=0) stopFlash("フラッシュ",flashTime.value,flashSpeed.value); },1000);
+  flashCountdown=setInterval(()=>{
+    total--;timer.textContent=formatTime(total);
+    if(total<=0)stopFlash("フラッシュ",flashTime.value,flashSpeed.value);
+  },1000);
 
-  flashTimer=setInterval(async ()=>{
-    if(silenceLock) return; // 黒画面中はスキップ
+  flashTimer=setInterval(()=>{
+    if(silenceLock) return;
     let out="";
-    if([10,15,20].includes(mode)){ out=flat.slice(char,char+mode); char+=mode; if(char>=flat.length) char=0; }
-    else { if(i>=lines.length) i=0; out=lines.slice(i,i+mode).join("\n"); i+=mode; }
-    flashText.textContent=out;
-
-    // 刺激を一瞬見せ、80%時点で消す
-    setTimeout(()=>{ flashText.textContent=""; }, speed*0.8);
-
-    // 刺激後に右脳沈黙
-    if(silenceModeEl.checked){
-      // 表示直後すぐに沈黙へ移ると読み取りが短すぎるので、わずかに遅らせる
-      setTimeout(()=>beginSilence(), speed*0.82);
+    if([10,15,20].includes(mode)){
+      out=flat.slice(char,char+mode);
+      char+=mode;if(char>=flat.length)char=0;
+    }else{
+      if(i>=lines.length)i=0;
+      out=lines.slice(i,i+mode).join("\n");
+      i+=mode;
     }
-  }, speed);
+    flashText.textContent=out;
+    setTimeout(()=>{flashText.textContent="";},speed*0.8);
+    if(silenceModeEl.checked){
+      setTimeout(()=>beginSilence(),speed*0.82);
+    }
+  },speed);
 }
 function stopFlash(type,dur,spd){
-  clearInterval(flashTimer); clearInterval(flashCountdown);
-  flashText.textContent=""; timer.textContent="停止中"; addHistory(type,dur,spd);
+  clearInterval(flashTimer);clearInterval(flashCountdown);
+  flashText.textContent="";timer.textContent="停止中";addHistory(type,dur,spd);
 }
 
 /* === 単語 === */
@@ -254,27 +319,33 @@ const wordFlash=document.getElementById("wordFlash");
 const timerWord=document.getElementById("timerWord");
 
 document.getElementById("startWord").onclick=()=>{
-  if(wordList.length==0)return alert("単語ファイルを選択してください");
+  if(wordList.length===0)return alert("単語ファイルを選択してください");
   startWord();
 };
 document.getElementById("stopWord").onclick=()=>stopWord("単語",wordTime.value,wordSpeed.value);
 
 function startWord(){
-  clearInterval(wordTimer); clearInterval(wordCountdown);
+  clearInterval(wordTimer);clearInterval(wordCountdown);
   let total=Number(wordTime.value)*60, speed=Number(wordSpeed.value)*1000;
-  wordCountdown=setInterval(()=>{ total--; timerWord.textContent=formatTime(total); if(total<=0) stopWord("単語",wordTime.value,wordSpeed.value); },1000);
+
+  wordCountdown=setInterval(()=>{
+    total--;timerWord.textContent=formatTime(total);
+    if(total<=0)stopWord("単語",wordTime.value,wordSpeed.value);
+  },1000);
 
   wordTimer=setInterval(()=>{
     if(silenceLock) return;
     const w=wordList[Math.floor(Math.random()*wordList.length)];
     wordFlash.textContent=shuffle(w);
-    setTimeout(()=>{ wordFlash.textContent=""; }, speed*0.8);
-    if(silenceModeEl.checked){ setTimeout(()=>beginSilence(), speed*0.82); }
-  }, speed);
+    setTimeout(()=>{wordFlash.textContent="";},speed*0.8);
+    if(silenceModeEl.checked){
+      setTimeout(()=>beginSilence(),speed*0.82);
+    }
+  },speed);
 }
 function stopWord(type,dur,spd){
-  clearInterval(wordTimer); clearInterval(wordCountdown);
-  wordFlash.textContent=""; timerWord.textContent="停止中"; addHistory(type,dur,spd);
+  clearInterval(wordTimer);clearInterval(wordCountdown);
+  wordFlash.textContent="";timerWord.textContent="停止中";addHistory(type,dur,spd);
 }
 
 /* === 円形 === */
@@ -284,38 +355,47 @@ const circleArea=document.getElementById("circleArea");
 const timerCircle=document.getElementById("timerCircle");
 
 document.getElementById("startCircle").onclick=()=>{
-  if(circleLines.length==0)return alert("ファイルを選択");
+  if(circleLines.length===0)return alert("ファイルを選択してください");
   startCircle();
 };
 document.getElementById("stopCircle").onclick=()=>stopCircle("円形",circleTime.value,circleSpeed.value);
 
 function startCircle(){
-  clearInterval(circleTimer); clearInterval(circleCountdown);
+  clearInterval(circleTimer);clearInterval(circleCountdown);
   let total=Number(circleTime.value)*60, speed=Number(circleSpeed.value)*1000;
-  circleCountdown=setInterval(()=>{ total--; timerCircle.textContent=formatTime(total); if(total<=0) stopCircle("円形",circleTime.value,circleSpeed.value); },1000);
+
+  circleCountdown=setInterval(()=>{
+    total--;timerCircle.textContent=formatTime(total);
+    if(total<=0)stopCircle("円形",circleTime.value,circleSpeed.value);
+  },1000);
 
   circleTimer=setInterval(()=>{
     if(silenceLock) return;
-    // 描画
     circleArea.innerHTML="";
-    const line=circleLines[Math.floor(Math.random()*circleLines.length)]; if(!line) return;
-    const chars=[...line], w=circleArea.clientWidth, h=circleArea.clientHeight, cx=w/2, cy=h/2, r=Math.min(w,h)*0.35;
+    const line=circleLines[Math.floor(Math.random()*circleLines.length)];
+    if(!line)return;
+    const chars=[...line];
+    const w=circleArea.clientWidth,h=circleArea.clientHeight;
+    const cx=w/2,cy=h/2,r=Math.min(w,h)*0.35;
     chars.forEach((c,i)=>{
-      const a=2*Math.PI*i/chars.length, x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+      const a=2*Math.PI*i/chars.length;
+      const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
       const div=document.createElement("div");
-      div.textContent=c; div.style.position="absolute";
-      div.style.left=x+"px"; div.style.top=y+"px"; div.style.transform="translate(-50%,-50%)";
-      div.style.fontSize="1.6rem"; div.style.fontFamily="sans-serif";
+      div.textContent=c;
+      div.className="letter";
+      div.style.left=x+"px";
+      div.style.top=y+"px";
       circleArea.appendChild(div);
     });
-    // 軽い残像のために少し後にクリア
-    setTimeout(()=>{ circleArea.innerHTML=""; }, speed*0.8);
-    if(silenceModeEl.checked){ setTimeout(()=>beginSilence(), speed*0.82); }
-  }, speed);
+    setTimeout(()=>{circleArea.innerHTML="";},speed*0.8);
+    if(silenceModeEl.checked){
+      setTimeout(()=>beginSilence(),speed*0.82);
+    }
+  },speed);
 }
 function stopCircle(type,dur,spd){
-  clearInterval(circleTimer); clearInterval(circleCountdown);
-  circleArea.innerHTML=""; timerCircle.textContent="停止中"; addHistory(type,dur,spd);
+  clearInterval(circleTimer);clearInterval(circleCountdown);
+  circleArea.innerHTML="";timerCircle.textContent="停止中";addHistory(type,dur,spd);
 }
 
 /* === ランダム === */
@@ -325,34 +405,44 @@ const randomArea=document.getElementById("randomArea");
 const timerRandom=document.getElementById("timerRandom");
 
 document.getElementById("startRandom").onclick=()=>{
-  if(randomLines.length==0)return alert("ファイルを選択");
+  if(randomLines.length===0)return alert("ファイルを選択してください");
   startRandom();
 };
 document.getElementById("stopRandom").onclick=()=>stopRandom("ランダム",randomTime.value,randomSpeed.value);
 
 function startRandom(){
-  clearInterval(randomTimer); clearInterval(randomCountdown);
+  clearInterval(randomTimer);clearInterval(randomCountdown);
   let total=Number(randomTime.value)*60, speed=Number(randomSpeed.value)*1000;
-  randomCountdown=setInterval(()=>{ total--; timerRandom.textContent=formatTime(total); if(total<=0) stopRandom("ランダム",randomTime.value,randomSpeed.value); },1000);
+
+  randomCountdown=setInterval(()=>{
+    total--;timerRandom.textContent=formatTime(total);
+    if(total<=0)stopRandom("ランダム",randomTime.value,randomSpeed.value);
+  },1000);
 
   randomTimer=setInterval(()=>{
     if(silenceLock) return;
     randomArea.innerHTML="";
-    const line=randomLines[Math.floor(Math.random()*randomLines.length)]; if(!line) return;
-    const chars=[...line], w=randomArea.clientWidth, h=randomArea.clientHeight;
+    const line=randomLines[Math.floor(Math.random()*randomLines.length)];
+    if(!line)return;
+    const chars=[...line];
+    const w=randomArea.clientWidth,h=randomArea.clientHeight;
     chars.forEach(c=>{
-      const div=document.createElement("div"); div.textContent=c; div.style.position="absolute";
-      div.style.left=rand(20,w-20)+"px"; div.style.top=rand(20,h-20)+"px";
-      div.style.transform="translate(-50%,-50%)"; div.style.fontSize="1.5rem"; div.style.fontFamily="sans-serif";
+      const div=document.createElement("div");
+      div.textContent=c;
+      div.className="letter";
+      div.style.left=rand(20,w-20)+"px";
+      div.style.top=rand(20,h-20)+"px";
       randomArea.appendChild(div);
     });
-    setTimeout(()=>{ randomArea.innerHTML=""; }, speed*0.8);
-    if(silenceModeEl.checked){ setTimeout(()=>beginSilence(), speed*0.82); }
-  }, speed);
+    setTimeout(()=>{randomArea.innerHTML="";},speed*0.8);
+    if(silenceModeEl.checked){
+      setTimeout(()=>beginSilence(),speed*0.82);
+    }
+  },speed);
 }
 function stopRandom(type,dur,spd){
-  clearInterval(randomTimer); clearInterval(randomCountdown);
-  randomArea.innerHTML=""; timerRandom.textContent="停止中"; addHistory(type,dur,spd);
+  clearInterval(randomTimer);clearInterval(randomCountdown);
+  randomArea.innerHTML="";timerRandom.textContent="停止中";addHistory(type,dur,spd);
 }
 
 /* === 履歴 === */
@@ -360,21 +450,27 @@ function getHistory(){return JSON.parse(localStorage.getItem("trainingHistory")|
 function saveHistory(d){localStorage.setItem("trainingHistory",JSON.stringify(d));}
 function addHistory(type,dur,spd){
   const r={date:new Date().toLocaleString(),type,duration:+dur,speed:+spd};
-  const hist=getHistory(); hist.push(r); saveHistory(hist); renderHistory();
+  const hist=getHistory();hist.push(r);saveHistory(hist);renderHistory();
 }
 function resetHistory(){
-  if(confirm("履歴を全削除しますか？")){ localStorage.removeItem("trainingHistory"); renderHistory(); }
+  if(confirm("履歴を全削除しますか？")){
+    localStorage.removeItem("trainingHistory");
+    renderHistory();
+  }
 }
 document.getElementById("resetHistory").onclick=resetHistory;
 document.getElementById("exportCSV").onclick=()=>{
-  const h=getHistory(); if(h.length==0) return alert("履歴なし");
+  const h=getHistory();if(h.length===0)return alert("履歴なし");
   const csv="日付,種類,分,秒\n"+h.map(x=>`${x.date},${x.type},${x.duration},${x.speed}`).join("\n");
-  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="training_history.csv"; a.click();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="training_history.csv";
+  a.click();
 };
 
 /* === グラフ === */
 document.getElementById("togglePeriod").onclick=()=>{
-  chartPeriod = chartPeriod=="day" ? "week" : chartPeriod=="week" ? "month" : "day";
+  chartPeriod=chartPeriod==="day"?"week":chartPeriod==="week"?"month":"day";
   renderHistory();
 };
 document.getElementById("toggleMode").onclick=()=>{
@@ -392,15 +488,16 @@ function renderHistory(){
 }
 function updateStats(hist){
   const modes=["フラッシュ","単語","円形","ランダム"];
-  const now=new Date(); const startOfWeek=new Date(now); startOfWeek.setDate(now.getDate()-now.getDay());
+  const now=new Date();
+  const startOfWeek=new Date(now);startOfWeek.setDate(now.getDate()-now.getDay());
   const startOfMonth=new Date(now.getFullYear(),now.getMonth(),1);
   const grouped={};
   hist.forEach(h=>{
     const d=new Date(h.date);
-    if(!grouped[h.type]) grouped[h.type]={day:0,week:0,month:0};
-    if(d.toDateString()==now.toDateString()) grouped[h.type].day+=h.duration;
-    if(d>=startOfWeek) grouped[h.type].week+=h.duration;
-    if(d>=startOfMonth) grouped[h.type].month+=h.duration;
+    if(!grouped[h.type])grouped[h.type]={day:0,week:0,month:0};
+    if(d.toDateString()===now.toDateString())grouped[h.type].day+=h.duration;
+    if(d>=startOfWeek)grouped[h.type].week+=h.duration;
+    if(d>=startOfMonth)grouped[h.type].month+=h.duration;
   });
   let html="";
   modes.forEach(m=>{
@@ -412,16 +509,20 @@ function updateStats(hist){
 function drawChart(hist){
   const keyFn=(d)=>{
     const date=new Date(d.date);
-    if(chartPeriod=="day") return d.date.split(" ")[0];
-    if(chartPeriod=="week"){ const week=Math.ceil(date.getDate()/7); return `${date.getFullYear()}-${date.getMonth()+1}-第${week}週`; }
+    if(chartPeriod==="day")return d.date.split(" ")[0];
+    if(chartPeriod==="week"){
+      const week=Math.ceil(date.getDate()/7);
+      return `${date.getFullYear()}-${date.getMonth()+1}-第${week}週`;
+    }
     return `${date.getFullYear()}-${date.getMonth()+1}月`;
   };
   const map={};
-  hist.filter(x=>x.type==chartMode).forEach(x=>{
-    const k=keyFn(x); map[k]=(map[k]||0)+x.duration;
+  hist.filter(x=>x.type===chartMode).forEach(x=>{
+    const k=keyFn(x);map[k]=(map[k]||0)+x.duration;
   });
-  const labels=Object.keys(map); const data=Object.values(map);
-  if(chart) chart.destroy();
+  const labels=Object.keys(map);
+  const data=Object.values(map);
+  if(chart)chart.destroy();
   chart=new Chart(chartEl.getContext("2d"),{
     type:"bar",
     data:{labels,datasets:[{label:`${chartMode} (${chartPeriod})`,data,backgroundColor:"rgba(25,118,210,0.5)"}]},
