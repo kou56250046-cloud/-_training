@@ -419,26 +419,68 @@ function startRandom(){
     if(total<=0)stopRandom("ランダム",randomTime.value,randomSpeed.value);
   },1000);
 
-  randomTimer=setInterval(()=>{
-    if(silenceLock) return;
-    randomArea.innerHTML="";
-    const line=randomLines[Math.floor(Math.random()*randomLines.length)];
-    if(!line)return;
-    const chars=[...line];
-    const w=randomArea.clientWidth,h=randomArea.clientHeight;
-    chars.forEach(c=>{
-      const div=document.createElement("div");
-      div.textContent=c;
-      div.className="letter";
-      div.style.left=rand(20,w-20)+"px";
-      div.style.top=rand(20,h-20)+"px";
-      randomArea.appendChild(div);
-    });
-    setTimeout(()=>{randomArea.innerHTML="";},speed*0.8);
-    if(silenceModeEl.checked){
-      setTimeout(()=>beginSilence(),speed*0.82);
+  randomTimer = setInterval(()=>{
+  if (silenceLock) return;
+  randomArea.innerHTML = "";
+
+  const line = randomLines[Math.floor(Math.random()*randomLines.length)];
+  if (!line) return;
+  const chars = [...line];
+
+  const w = randomArea.clientWidth;
+  const h = randomArea.clientHeight;
+  const margin = 24; // 端から少し余白
+
+  const placed = [];
+  // 文字数に応じて「最低距離」を少し変える（多いほど詰まる）
+  const base = Math.min(w, h);
+  const minDist = base / Math.max(4, Math.sqrt(chars.length)*1.2); // ざっくり距離目安
+
+  function placePoint() {
+    let tries = 0;
+    while (tries < 50) {
+      const x = rand(margin, w - margin);
+      const y = rand(margin, h - margin);
+
+      let ok = true;
+      for (const p of placed) {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        if (dx*dx + dy*dy < minDist*minDist) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        placed.push({x, y});
+        return {x, y};
+      }
+      tries++;
     }
-  },speed);
+    // うまく見つからなかったら、多少重なっても良しとしてランダム配置
+    const x = rand(margin, w - margin);
+    const y = rand(margin, h - margin);
+    placed.push({x, y});
+    return {x, y};
+  }
+
+  chars.forEach(ch => {
+    const {x, y} = placePoint();
+    const div = document.createElement("div");
+    div.textContent = ch;
+    div.className = "letter";
+    div.style.left = x + "px";
+    div.style.top  = y + "px";
+    randomArea.appendChild(div);
+  });
+
+  setTimeout(()=>{ randomArea.innerHTML = ""; }, speed*0.8);
+  if (silenceModeEl.checked) {
+    setTimeout(()=>beginSilence(), speed*0.82);
+  }
+}, speed);
+
+
 }
 function stopRandom(type,dur,spd){
   clearInterval(randomTimer);clearInterval(randomCountdown);
